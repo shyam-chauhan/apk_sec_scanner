@@ -31,19 +31,19 @@ A Python-based utility to detect hardcoded secrets, tokens, and sensitive data i
 ### 🔸 Scan a direct APK file
 
 ```bash
-python apk_secret_scanner.py --apk path/to/app.apk
+python apk_scanner.py --apk path/to/app.apk
 ````
 
 ### 🔸 Scan an already extracted APK directory
 
 ```bash
-python apk_secret_scanner.py --dir path/to/folder
+python apk_scanner.py --dir path/to/folder
 ```
 
 ### 🔸 Customize output report filename
 
 ```bash
-python apk_secret_scanner.py --apk app.apk --output my_scan_report.html
+python apk_scanner.py --apk app.apk --output my_scan_report.html
 ```
 
 ---
