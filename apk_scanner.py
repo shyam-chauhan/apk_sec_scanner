@@ -1453,6 +1453,7 @@ SENSITIVE_PATTERNS = {
     "Possible Leak " : r'(?i)[\"\']?twitteroauthaccesssecret[\"\']?[^\\S\r\n]*[=:][^\\S\r\n]*[\"\']?[\w-]+[\"\']?',
     "Possible Leak " : r'(?i)[\"\']?twitter[_-]?consumer[_-]?secret[\"\']?[^\\S\r\n]*[=:][^\\S\r\n]*[\"\']?[\w-]+[\"\']?',
     "Possible Leak " : r'(?i)[\"\']?twitter[_-]?consumer[_-]?key[\"\']?[^\\S\r\n]*[=:][^\\S\r\n]*[\"\']?[\w-]+[\"\']?'
+    
 }
 COMPILED_PATTERNS = {k: re.compile(v) for k, v in SENSITIVE_PATTERNS.items()}
 BASE64_REGEX = re.compile(r"\b[A-Za-z0-9+/]{20,}={0,2}\b")
@@ -1556,112 +1557,175 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
     binary_categories = categorize(binary_findings)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    html = ["""<html>
+    html = [f"""<html>
 <head>
-  <title>APK Secret Scanner</title>
+  <title>APK Secret Scanner Report</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    body {{
+      font-family: 'Segoe UI', sans-serif;
       background-color: #121212;
-      color: #e0f7fa;
-      padding: 2em;
-      margin: 0;
-      line-height: 1.6;
-    }
-    h1 {
-      color: #4dd0e1;
+      color: #e0e0e0;
+      padding: 40px;
+    }}
+    h1 {{
       text-align: center;
-      margin-bottom: 1em;
-    }
-    summary {
+      margin-bottom: 30px;
+    }}
+    .meta p {{
+      margin: 5px 0;
+      font-size: 14px;
+    }}
+    .hub {{
+      background-color: #1a1a1a;
+      border: 1px solid #2c2c2c;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      padding: 20px;
+    }}
+    .hub h3 {{
+      margin: 0 0 5px;
+      font-size: 18px;
+      color: #f5f5f5;
+    }}
+    .hub p {{
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #aaaaaa;
+    }}
+    .view-hub-button {{
+      padding: 6px 12px;
+      background-color: #2c2c2c;
+      border: none;
+      color: #ddd;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 1.1em;
-      color: #4dd0e1;
-      margin: 12px 0;
-      transition: color 0.3s ease;
-    }
-    summary:hover {
-      color: #00e5ff;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 16px 0;
-      background-color: #1e1e1e;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    th, td {
-      border: 1px solid #333;
-      padding: 10px;
-      text-align: left;
-    }
-    th {
-      background-color: #0288d1;
-      color: #fff;
-    }
-    td {
-      color: #b3e5fc;
-    }
-    code {
-      background: #263238;
-      padding: 4px 6px;
+      margin-bottom: 10px;
+    }}
+    .dropdown-content {{
+      display: none;
+      padding-top: 10px;
+    }}
+    .dropdown-content ul {{
+      list-style: none;
+      padding-left: 0;
+    }}
+    .dropdown-content li {{
+      margin-bottom: 8px;
+    }}
+    .dropdown-link {{
+      color: #9ecfff;
+      text-decoration: none;
+      font-size: 14px;
+    }}
+    code {{
+      background-color: #262626;
+      padding: 3px 6px;
       border-radius: 4px;
-      color: #81d4fa;
       display: inline-block;
+      color: #dddddd;
       max-width: 100%;
       overflow-wrap: break-word;
-    }
-    .binary-section {
-      border: 2px dashed #4dd0e1;
-      padding: 20px;
-      margin: 30px 0;
-      background-color: #1a1a1a;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(77, 208, 225, 0.2);
-    }
+    }}
   </style>
+  <script>
+    function toggleDropdown(button) {{
+      var content = button.nextElementSibling;
+      if (content.style.display === "block") {{
+        content.style.display = "none";
+        button.textContent = "View Hub";
+      }} else {{
+        content.style.display = "block";
+        button.textContent = "Hide Hub";
+      }}
+    }}
+  </script>
 </head>
 <body>
-  <h1>APK Secret Scanner</h1>
+  <h1>APK Secret Scan Report</h1>
+  <div class="meta">
+    <p><strong>Target:</strong> {escape(target)}</p>
+    <p><strong>Generated:</strong> {now}</p>
+    <p><strong>Obfuscation Detected:</strong> {'Yes' if obfuscated else 'No'}</p>
+  </div>
+"""]
 
-""",
-            f"<h1>Scan Report: {escape(target)}</h1><p>Generated: {now}</p>",
-            f"<p><b>Obfuscation:</b> {'Yes' if obfuscated else 'No'}</p>"]
+    def render_list(items, is_base64=False):
+        rows = []
+        for item in items:
+            if is_base64:
+                enc, dec = item
+                val = f"Base64: <code>{escape(enc)}</code> → <code>{escape(dec)}</code>"
+            else:
+                val = f"<code>{escape(item)}</code>"
+            rows.append(f"<li>{val}</li>")
+        return '\n'.join(rows)
 
     if sensitive_files:
-        html.append(f'<details open><summary>Sensitive Files ({len(sensitive_files)})</summary><ul>')
-        html.extend(f"<li>{escape(file)}</li>" for file in sensitive_files)
-        html.append("</ul></details>")
+        html.append(f'''
+        <div class="hub">
+            <h3>Sensitive Files ({len(sensitive_files)})</h3>
+            <p>List of sensitive file names found</p>
+            <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+            <div class="dropdown-content">
+                <ul>
+                    {render_list(sensitive_files)}
+                </ul>
+            </div>
+        </div>
+        ''')
 
     for label, matches in categories.items():
-        html.append(f'<details><summary>{escape(label)} ({len(matches)})</summary><table>')
-        html.append("<tr><th>File</th><th>Value</th></tr>")
-        for file, val in matches:
-            html.append(f"<tr><td>{escape(file)}</td><td><code>{escape(val)}</code></td></tr>")
-        html.append("</table></details>")
+        content = [f"<li><code>{escape(file)}</code>: <code>{escape(val)}</code></li>" for file, val in matches]
+        html.append(f'''
+        <div class="hub">
+            <h3>{escape(label)} ({len(matches)})</h3>
+            <p>Secrets found grouped under: {escape(label)}</p>
+            <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+            <div class="dropdown-content">
+                <ul>
+                    {''.join(content)}
+                </ul>
+            </div>
+        </div>
+        ''')
 
     for file, _, base64s in text_findings:
         if base64s:
-            html.append(f'<details><summary>Base64 in {escape(file)} ({len(base64s)})</summary><table>')
-            html.append("<tr><th>Encoded</th><th>Decoded</th></tr>")
-            for enc, dec in base64s:
-                html.append(f"<tr><td><code>{escape(enc)}</code></td><td><code>{escape(dec)}</code></td></tr>")
-            html.append("</table></details>")
+            html.append(f'''
+            <div class="hub">
+                <h3>Base64 in {escape(file)} ({len(base64s)})</h3>
+                <p>Decoded base64 values detected</p>
+                <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+                <div class="dropdown-content">
+                    <ul>
+                        {render_list(base64s, is_base64=True)}
+                    </ul>
+                </div>
+            </div>
+            ''')
 
     if binary_categories:
-        html.append('<div class="binary-section"><h2>Binary File Findings</h2>')
         for label, matches in binary_categories.items():
-            html.append(f'<details><summary>{escape(label)} ({len(matches)})</summary><table>')
-            html.append("<tr><th>Binary File</th><th>Value</th></tr>")
-            for file, val in matches:
-                html.append(f"<tr><td>{escape(file)}</td><td><code>{escape(val)}</code></td></tr>")
-            html.append("</table></details>")
-        html.append('</div>')
+            content = [f"<li><code>{escape(file)}</code>: <code>{escape(val)}</code></li>" for file, val in matches]
+            html.append(f'''
+            <div class="hub">
+                <h3>Binary: {escape(label)} ({len(matches)})</h3>
+                <p>Secrets found in binary files</p>
+                <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+                <div class="dropdown-content">
+                    <ul>
+                        {''.join(content)}
+                    </ul>
+                </div>
+            </div>
+            ''')
 
     html.append("</body></html>")
+
     with open(output, 'w', encoding='utf-8') as f:
         f.write('\n'.join(html))
+
+
 
 def unzip_apk(apk_path, extract_dir):
     with zipfile.ZipFile(apk_path, 'r') as zip_ref:
