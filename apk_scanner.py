@@ -1575,24 +1575,32 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
       margin: 5px 0;
       font-size: 14px;
     }}
-    .hub {{
+    .cards-container {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }}
+    .card {{
+      flex: 1 1 calc(33.33% - 20px);
+      min-width: 300px;
       background-color: #1a1a1a;
       border: 1px solid #2c2c2c;
       border-radius: 10px;
-      margin-bottom: 20px;
       padding: 20px;
+      box-sizing: border-box;
     }}
-    .hub h3 {{
-      margin: 0 0 5px;
+    .card h3 {{
+      margin: 0 0 10px;
       font-size: 18px;
       color: #f5f5f5;
     }}
-    .hub p {{
-      margin: 0 0 10px;
+    .card p {{
+      margin: 0 0 15px;
       font-size: 14px;
       color: #aaaaaa;
     }}
-    .view-hub-button {{
+    .view-button {{
       padding: 6px 12px;
       background-color: #2c2c2c;
       border: none;
@@ -1608,9 +1616,11 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
     .dropdown-content ul {{
       list-style: none;
       padding-left: 0;
+      margin: 0;
     }}
     .dropdown-content li {{
       margin-bottom: 8px;
+      word-break: break-all;
     }}
     .dropdown-link {{
       color: #9ecfff;
@@ -1626,16 +1636,26 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
       max-width: 100%;
       overflow-wrap: break-word;
     }}
+    @media (max-width: 1000px) {{
+      .card {{
+        flex: 1 1 calc(50% - 20px);
+      }}
+    }}
+    @media (max-width: 600px) {{
+      .card {{
+        flex: 1 1 100%;
+      }}
+    }}
   </style>
   <script>
     function toggleDropdown(button) {{
       var content = button.nextElementSibling;
       if (content.style.display === "block") {{
         content.style.display = "none";
-        button.textContent = "View Hub";
+        button.textContent = "View Details";
       }} else {{
         content.style.display = "block";
-        button.textContent = "Hide Hub";
+        button.textContent = "Hide Details";
       }}
     }}
   </script>
@@ -1660,12 +1680,15 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
             rows.append(f"<li>{val}</li>")
         return '\n'.join(rows)
 
+    # Start cards container
+    html.append('<div class="cards-container">')
+
     if sensitive_files:
         html.append(f'''
-        <div class="hub">
+        <div class="card">
             <h3>Sensitive Files ({len(sensitive_files)})</h3>
             <p>List of sensitive file names found</p>
-            <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+            <button class="view-button" onclick="toggleDropdown(this)">View Details</button>
             <div class="dropdown-content">
                 <ul>
                     {render_list(sensitive_files)}
@@ -1677,10 +1700,10 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
     for label, matches in categories.items():
         content = [f"<li><code>{escape(file)}</code>: <code>{escape(val)}</code></li>" for file, val in matches]
         html.append(f'''
-        <div class="hub">
+        <div class="card">
             <h3>{escape(label)} ({len(matches)})</h3>
             <p>Secrets found grouped under: {escape(label)}</p>
-            <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+            <button class="view-button" onclick="toggleDropdown(this)">View Details</button>
             <div class="dropdown-content">
                 <ul>
                     {''.join(content)}
@@ -1692,10 +1715,10 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
     for file, _, base64s in text_findings:
         if base64s:
             html.append(f'''
-            <div class="hub">
+            <div class="card">
                 <h3>Base64 in {escape(file)} ({len(base64s)})</h3>
                 <p>Decoded base64 values detected</p>
-                <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+                <button class="view-button" onclick="toggleDropdown(this)">View Details</button>
                 <div class="dropdown-content">
                     <ul>
                         {render_list(base64s, is_base64=True)}
@@ -1708,10 +1731,10 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
         for label, matches in binary_categories.items():
             content = [f"<li><code>{escape(file)}</code>: <code>{escape(val)}</code></li>" for file, val in matches]
             html.append(f'''
-            <div class="hub">
+            <div class="card">
                 <h3>Binary: {escape(label)} ({len(matches)})</h3>
                 <p>Secrets found in binary files</p>
-                <button class="view-hub-button" onclick="toggleDropdown(this)">View Hub</button>
+                <button class="view-button" onclick="toggleDropdown(this)">View Details</button>
                 <div class="dropdown-content">
                     <ul>
                         {''.join(content)}
@@ -1720,7 +1743,8 @@ def generate_html_report(findings, output, sensitive_files, obfuscated, target):
             </div>
             ''')
 
-    html.append("</body></html>")
+    # Close cards container
+    html.append("</div></body></html>")
 
     with open(output, 'w', encoding='utf-8') as f:
         f.write('\n'.join(html))
