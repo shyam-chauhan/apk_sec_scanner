@@ -31,6 +31,7 @@ SENSITIVE_PATTERNS = {
     "JWT": r"eyJ[0-9a-zA-Z-_]+?\.[0-9a-zA-Z-_]+?\.[0-9a-zA-Z-_.+/=]*",
     "Stripe Secret Key": r"sk_(?:live|test)_[0-9a-zA-Z]{24,}",
     "Stripe Publishable Key": r"pk_(?:live|test)_[0-9a-zA-Z]{24,}",
+    "OpenAI Key": r"sk-[0-9a-zA-Z]{48}",
     "Slack Token": r"xox(?:b|a|p|r|s)-[0-9a-zA-Z]{10,48}",
     "Generic API Key": r"(?i)(?:api|apikey|secret|token)[\s:=\"']{1,3}([^\s\"'<>]{16,})",
     "Private Key": r"-----BEGIN (?:RSA|DSA|EC|PGP|PRIVATE) KEY-----",
