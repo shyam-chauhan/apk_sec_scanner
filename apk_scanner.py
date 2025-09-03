@@ -33,9 +33,11 @@ SENSITIVE_PATTERNS = {
     "Stripe Publishable Key": r"pk_(?:live|test)_[0-9a-zA-Z]{24,}",
     "OpenAI Key": r"sk-[0-9a-zA-Z]{48}",
     "Slack Token": r"xox(?:b|a|p|r|s)-[0-9a-zA-Z]{10,48}",
+    "PayPal Secret": r"(?i)(?:paypal.*secret)[\s:=\"']+[^\x00-\x1F\x7F<>]{32,}",
+    "PayPal Access Token": r"access_token\\$production\\$[a-zA-Z0-9\-_]{100,}",
     "Generic API Key": r"(?i)(?:api|apikey|secret|token)[\s:=\"']{1,3}([^\s\"'<>]{16,})",
     "Private Key": r"-----BEGIN (?:RSA|DSA|EC|PGP|PRIVATE) KEY-----",
-    "Username": r"(?i)(?:username|user|uname)[\s:=\"']+([a-zA-Z0-9._-]{3,})",
+    # "Username": r"(?i)(?:username|user|uname)[\s:=\"']+([a-zA-Z0-9._-]{3,})",
     "Password": r"(?i)(?:password|passwd|pwd)[\s:=\"']+([a-zA-Z0-9!@#$%^&*()_+=\-]{4,})",
 }
 COMPILED_PATTERNS = {k: re.compile(v) for k, v in SENSITIVE_PATTERNS.items()}
