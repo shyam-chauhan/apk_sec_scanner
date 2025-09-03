@@ -221,7 +221,7 @@ def main():
     logging.info(f"Scan complete! Report saved to: {args.output}")
 
 if __name__ == "__main__":
-        print(r"""
+    print(r"""
          _              _                                                           
         / \     _ __   | | __      ___    ___    __ _   _ __    _ __     ___   _ __ 
        / _ \   | '_ \  | |/ /     / __|  / __|  / _` | | '_ \  | '_ \   / _ \ | '__|
